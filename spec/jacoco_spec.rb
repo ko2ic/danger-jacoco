@@ -169,6 +169,27 @@ module Danger
 
         expect { @my_plugin.report path_a, fail_no_coverage_data_found: false }.to_not raise_error(RuntimeError)
       end
+
+      it 'test with prioritize instruction class coverage' do
+        path_a = "#{File.dirname(__FILE__)}/fixtures/output_a.xml"
+
+        @my_plugin.minimum_class_coverage_map = { 'com/example/CachedRepository' => 80 }
+        @my_plugin.prioritize_instruction_class_coverage = true 
+
+        @my_plugin.report path_a
+
+        expect(@dangerfile.status_report[:markdowns][0].message).to include('| `com/example/CachedRepository` | 100% | 80% | :white_check_mark: |')
+      end
+      it 'test with prioritize branch class coverage' do
+        path_a = "#{File.dirname(__FILE__)}/fixtures/output_a.xml"
+
+        @my_plugin.minimum_class_coverage_map = { 'com/example/CachedRepository' => 80 }
+        @my_plugin.prioritize_instruction_class_coverage = false 
+
+        @my_plugin.report path_a
+
+        expect(@dangerfile.status_report[:markdowns][0].message).to include('| `com/example/CachedRepository` | 50% | 80% | :warning: |')
+      end
     end
   end
 end

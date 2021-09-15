@@ -21,7 +21,9 @@ module Danger
   #
   class DangerJacoco < Plugin # rubocop:disable Metrics/ClassLength
     attr_accessor :minimum_project_coverage_percentage, :minimum_class_coverage_percentage, :files_extension,
-                  :minimum_package_coverage_map, :minimum_class_coverage_map, :fail_no_coverage_data_found, :title
+                  :minimum_package_coverage_map, :minimum_class_coverage_map, :fail_no_coverage_data_found, :title,
+                  :prioritize_instruction_class_coverage
+             
 
     # Initialize the plugin with configured parameters or defaults
     def setup
@@ -31,6 +33,7 @@ module Danger
       @minimum_class_coverage_map = {} unless minimum_class_coverage_map
       @files_extension = ['.kt', '.java'] unless files_extension
       @title = 'JaCoCo' unless title
+      @prioritize_instruction_class_coverage = false unless prioritize_instruction_class_coverage
     end
 
     # Parses the xml output of jacoco to Ruby model classes
@@ -163,9 +166,14 @@ module Danger
 
     def coverage_counter(jacoco_class)
       counters = jacoco_class.counters
+      instruction_counter = counters.detect { |e| e.type.eql? 'INSTRUCTION' }
       branch_counter = counters.detect { |e| e.type.eql? 'BRANCH' }
       line_counter = counters.detect { |e| e.type.eql? 'LINE' }
-      counter = branch_counter.nil? ? line_counter : branch_counter
+      counter = if @prioritize_instruction_class_coverage
+                  instruction_counter
+                else
+                  branch_counter.nil? ? line_counter : branch_counter
+                end
 
       if counter.nil?
         no_coverage_data_found_message = "No coverage data found for #{jacoco_class.name}"
